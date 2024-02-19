@@ -14,7 +14,7 @@ def show_tab(n = 5):
     Muestra la tabla original de datos con 'n' entradas.
     """
     d = pd.read_csv("../data/data.csv")
-    return d.head()
+    return d.head(n)
 
 def show_methods():
     d = pd.read_csv("../data/data.csv")
@@ -146,9 +146,66 @@ def add_event(figu, val, lab = " ", pos = "izq", alt = 75, save = False, savenam
     elif pos == 'der':
         ax.annotate(lab, (val, (b-a)*.75), rotation = 90)
     plot_funcs(ax, fig, False, save, savename)
-    fig.show()
+    #fig.show()
     return    
 
+
+def simple_hist(parametro, metodo = "All", cortar = False, xmax = None, xmin = None, numero = None, separador = None, 
+                titulox = None, grid = False, save = False, savename = ''):
+    """Genera un histograma simple de algun parametro de exoplanetas.
+
+    Args:
+        parametro (str): Columna a graficar
+        metodo (str, optional): Metodo de descubrimiento a graficar. Usa todas las columnas por defecto.
+                                si metodo = "All" también usará todas las columnas.
+        cortar (bool, optional): Si se usarán los parámetros extras. Es False por defecto.
+        Los siguientes parámetros dependen si cortar = True
+            xmax (_type_, optional): Límite superior de x, cualquier valor menor a este adopta el valor de xmax.
+            xmin (_type_, optional): Límite inferior de x, cualquier valor mayor a este adopta el valor de xmin.
+            numero (_type_, optional): Numero de bins. 
+            separador (_type_, optional): Separación de bins.
+            Si se declaran numero y separador al mismo tiempo el código toma separador como parámetro.
+
+        titulox (str, optional): Titulo de la figura. Defaults to None.
+        grid (bool, optional): Si encender el grid de la figura. Defaults to False.
+        save (bool, optional): Guardar figura? con el nombre de savename. Defaults to False.
+        savename (str, optional): Nombre de figura a guardar. Defaults to ''.
+    """
+    
+    d = pd.read_csv("../data/data.csv")
+    if metodo == "All":
+        aux = d
+    else:
+        aux = d[d.discoverymethod == metodo]
+    
+    fig, ax = plt.subplots(1,1)
+    if cortar:
+        if xmax == None or xmin == None:
+            print("ERROR: Límite superior o inferior no determinado")
+            exit()
+        
+        if separador != None:
+            bns = np.arange(xmin, xmax, separador)
+        elif numero != None:
+            bns = np.linspace(xmin, xmax, numero)
+        else:
+            print("ERROR: No has añadido forma de generar bins")
+            exit()
+        aux = aux[parametro].mask(aux[parametro] > xmax, xmax)
+        aux = aux.mask(aux < xmin, xmin)
+        ax.hist(aux, bins = bns)
+    else:
+        ax.hist(aux[parametro])
+    if titulox != None:
+        ax.set_xlabel(titulox) 
+    else:
+        ax.set_xlabel(parametro)
+    ax.set_ylabel("Exoplanets")
+    ax.set_title(f"Histograma {metodo}")
+    ax.set_xlim(0,xmax) #you can change the limit of the plot
+    plot_funcs(ax, fig, grid, save, savename)
+    return (fig, ax)
+    
 
 if __name__ == "__main__":
     t, d = grouped_methods()
